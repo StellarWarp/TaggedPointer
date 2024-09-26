@@ -203,6 +203,27 @@ namespace tp
         {
             _ptr = _ptr & pointer_bit_mask;
         }
+
+        bool operator==(const tagged_ptr_base& other) const
+        {
+            return get_ptr() == other.get_ptr();
+        }
+
+        auto operator<=>(const tagged_ptr_base& other) const
+        {
+            return get_ptr() <=> other.get_ptr();
+        }
+
+        bool operator==(const T* other) const
+        {
+            return get_ptr() == other;
+        }
+
+        auto operator<=>(const T* other) const
+        {
+            return get_ptr() <=> other;
+        }
+
     };
 
 
