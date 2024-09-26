@@ -7,6 +7,7 @@ suite sample = [] {
 
     "sample1"_test = [] {
         int a = 0;
+        //low bits: 2 utilize int alignment of 4
         tp::tagged_ptr<int, bool, bool> p = &a;
 
         //bool,bool
@@ -37,7 +38,8 @@ suite sample = [] {
     "sample3"_test = [] {
 
         int a = 0;
-        //low bits: 2 + x86_64 high bits reserve: 16
+        // low bits: 2
+        // platform dependent: x86_64 high bits reserve: 16
         tp::tagged_ptr<int, bool, bool, uint16_t> p = &a;
 
         const auto [b1,b2,i] = p;
@@ -45,7 +47,7 @@ suite sample = [] {
     };
 
     "sample4"_test = [] {
-
+        // platform dependent: x86_64 high bits reserve: 16
         tp::tagged_ptr<void, uint16_t> p;
 
         const auto [i] = p;
