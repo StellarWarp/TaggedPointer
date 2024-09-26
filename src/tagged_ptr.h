@@ -266,7 +266,6 @@ namespace tp
         };
 
 
-
         template<size_t... I>
         static constexpr size_t sum()
         {
@@ -277,17 +276,23 @@ namespace tp
         }
 
         static constexpr std::array<size_t, sizeof...(Tags)> tags_size = {tag_size<Tags>::value...};
-        static constexpr std::array<size_t, sizeof...(Tags) + 1> tags_range = []
+        static constexpr std::array<size_t, sizeof...(Tags)> tags_begin = []
         {
-            std::array<size_t, sizeof...(Tags) + 1> arr;
-            arr[0] = 0;
+            std::array<size_t, sizeof...(Tags)> arr;
             size_t current = 0;
-            for (size_t i = 1; i <= sizeof...(Tags); ++i)
+            for (size_t i = 0; i < sizeof...(Tags); ++i)
             {
-                current += tags_size[i - 1];
-                if(current >= base::low_bits)
-                    current = sizeof(uintptr_t ) * 8 - base::high_bits;
-                arr[i] = current;
+                if (current + tags_size[i] < base::low_bits)
+                {
+                    arr[i] = current;
+                    current += tags_size[i];
+                }
+                else
+                {
+                    current = sizeof(uintptr_t) * 8 - base::high_bits;
+                    arr[i] = current;
+                    current += tags_size[i];
+                }
             }
             return arr;
         }();
@@ -304,7 +309,7 @@ namespace tp
         {
             using tag = std::tuple_element<I, std::tuple<Tags...>>::type;
             using type = detail::tag_type<tag>;
-            return tag_ref<T, type, tags_range[I], tags_size[I]>(this);
+            return tag_ref<T, type, tags_begin[I], tags_size[I]>(this);
         }
 
         template<size_t I>
@@ -312,7 +317,7 @@ namespace tp
         {
             using tag = std::tuple_element<I, std::tuple<Tags...>>::type;
             using type = detail::tag_type<tag>;
-            return base::template get_int<type, tags_range[I], tags_size[I]>();
+            return base::template get_int<type, tags_begin[I], tags_size[I]>();
         }
 
         T* get()
@@ -325,16 +330,20 @@ namespace tp
 
 namespace std
 {
-	template <typename T, typename... Tags>
-	struct tuple_size<tp::tagged_ptr<T,Tags...>> : std::integral_constant<std::size_t, sizeof...(Tags)> {};
+    template<typename T, typename... Tags>
+    struct tuple_size<tp::tagged_ptr < T, Tags...>> : std::integral_constant<std::size_t, sizeof...(Tags)>
+{
+};
 
-	template <std::size_t Index, typename T, typename... Tags>
-	struct tuple_element<Index, tp::tagged_ptr<T,Tags...>> {
-		using type = decltype(std::declval<tp::tagged_ptr<T,Tags...>>().template get<Index>());
-	};
+template<std::size_t Index, typename T, typename... Tags>
+struct tuple_element<Index, tp::tagged_ptr<T, Tags...>>
+{
+    using type = decltype(std::declval<tp::tagged_ptr<T, Tags...>>().template get<Index>());
+};
 
-    template <std::size_t Index, typename T, typename... Tags>
-    struct tuple_element<Index, const tp::tagged_ptr<T,Tags...>> {
-        using type = decltype(std::declval<const tp::tagged_ptr<T,Tags...>>().template get<Index>());
-    };
+template<std::size_t Index, typename T, typename... Tags>
+struct tuple_element<Index, const tp::tagged_ptr<T, Tags...>>
+{
+    using type = decltype(std::declval<const tp::tagged_ptr<T, Tags...>>().template get<Index>());
+};
 }
